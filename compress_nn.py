@@ -1,13 +1,9 @@
-
 import sys
 import os
 import numpy as np
 from nn.model import NeuralNetwork
 
-def compress_model(input_path, output_path):
-    print(f"Loading model from {input_path}...")
-    model = NeuralNetwork.load(input_path)
-    
+def compress_model_object(model):
     print("Compressing model...")
     
     # 1. Convert weights and biases to float32
@@ -50,6 +46,13 @@ def compress_model(input_path, output_path):
         layer._output = None
         layer._input_units = None # This might be needed for build, but usually build is done. 
                                   # Actually _input_units is just an int, keep it.
+    return model
+
+def compress_model(input_path, output_path):
+    print(f"Loading model from {input_path}...")
+    model = NeuralNetwork.load(input_path)
+    
+    compress_model_object(model)
     
     print(f"Saving compressed model to {output_path}...")
     model.save(output_path)

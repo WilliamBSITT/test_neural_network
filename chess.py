@@ -1,11 +1,12 @@
 import os
 import glob
 import numpy as np
-# from loguru import logger
+from loguru import logger
 import json
 import sys
 from nn.model import NeuralNetwork
 from nn.callback import EarlyStopping, ModelCheckpoint, CSVLogger
+from compress_nn import compress_model_object
 
 # Mapping for pieces to indices in the 12-channel vector
 PIECE_MAP = {
@@ -145,7 +146,7 @@ def train_model(
         for cb in callbacks:
             cb.on_epoch_end(epoch, val_loss)
 
-        # logger.info(f"Epoch {epoch}/{end}, Train Loss: {avg_loss:.4f}, Val Loss: {val_loss:.4f}")
+        logger.info(f"Epoch {epoch}/{end}, Train Loss: {avg_loss:.4f}, Val Loss: {val_loss:.4f}")
 
         # check stop
         if any(getattr(cb, 'stop_training', False) for cb in callbacks):
@@ -201,7 +202,7 @@ def run_train(loadfile, chessfile, savefile=None, epochs=200, batch_size=64):
     x_test, y_test = x[:, test_indices], y[:, test_indices]
     
     if os.path.exists(loadfile):
-        # logger.info(f"Loading existing model from {loadfile}")
+        logger.info(f"Loading existing model from {loadfile}")
         model = NeuralNetwork.load(loadfile)
     else:
         sys.exit(84)
@@ -224,7 +225,7 @@ def run_train(loadfile, chessfile, savefile=None, epochs=200, batch_size=64):
             with open(meta_path, 'r') as mf:
                 meta = json.load(mf)
                 last_epoch = int(meta.get('last_epoch', 0))
-                # logger.info(f"Resuming from epoch {last_epoch}")
+                logger.info(f"Resuming from epoch {last_epoch}")
         except Exception:
             last_epoch = 0
 
@@ -242,6 +243,10 @@ def run_train(loadfile, chessfile, savefile=None, epochs=200, batch_size=64):
             callbacks=callbacks,
             initial_epoch=last_epoch,
         )
+    
+    
+    print("Compressing model before saving...")
+    compress_model_object(model)
     
     # logger.info(f"Saving model to {loadfile}")
     if savefile is not None:
@@ -308,7 +313,7 @@ if __name__ == "__main__":
     # print(f'Loadfile: {loadfile}, Chessfile: {chessfile}, Mode: {mode}, Savefile: {savefile}')
 
     if mode == 'train':
-        run_train(loadfile, chessfile, savefile=savefile, epochs=200, batch_size=64)
+        run_train(loadfile, chessfile, savefile=savefile, epochs=1, batch_size=64)
     elif mode == 'predict':
         if savefile is not None:
             print('Warning: --save ignored in predict mode', file=sys.stderr)
