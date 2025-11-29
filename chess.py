@@ -1,14 +1,10 @@
 import os
 import glob
 import numpy as np
-from loguru import logger
+# from loguru import logger
 import json
 import sys
-from nn.activation import ReLU, Sigmoid, Softmax
-from nn.layer import Dense
-from nn.loss import BinaryCrossEntropy, CategoricalCrossEntropy
 from nn.model import NeuralNetwork
-from nn.optimizer import Adam
 from nn.callback import EarlyStopping, ModelCheckpoint, CSVLogger
 
 # Mapping for pieces to indices in the 12-channel vector
@@ -56,14 +52,14 @@ def parse_fen(fen):
     return np.concatenate([board_flat, [turn_val]])
 
 def load_data(dataset_dir):
-    logger.info(f"Loading data from {dataset_dir}")
+    # logger.info(f"Loading data from {dataset_dir}")
     files = glob.glob(os.path.join(dataset_dir, "*.txt"))
     
     x_data = []
     y_data = []
     
     for file_path in files:
-        logger.info(f"Processing {file_path}")
+        # logger.info(f"Processing {file_path}")
         with open(file_path, 'r') as f:
             for line in f:
                 line = line.strip()
@@ -149,144 +145,15 @@ def train_model(
         for cb in callbacks:
             cb.on_epoch_end(epoch, val_loss)
 
-        logger.info(f"Epoch {epoch}/{end}, Train Loss: {avg_loss:.4f}, Val Loss: {val_loss:.4f}")
+        # logger.info(f"Epoch {epoch}/{end}, Train Loss: {avg_loss:.4f}, Val Loss: {val_loss:.4f}")
 
         # check stop
         if any(getattr(cb, 'stop_training', False) for cb in callbacks):
             break
 
-# def main():
-    # dataset_dir = "dataset2"
-    
-    # # Check if dataset exists
-    # if not os.path.isdir(dataset_dir):
-    #     logger.error(f"Dataset directory {dataset_dir} not found.")
-    #     return
-
-    # # Load data
-    # x, y = load_data(dataset_dir)
-    
-    # logger.info(f"Loaded {len(x)} samples.")
-    
-    # # Transpose for the network (features, num_examples)
-    # x = x.T
-    # y = y.T
-    
-    # # Split train/test
-    # num_samples = x.shape[1]
-    # indices = np.random.permutation(num_samples)
-    # split_idx = int(num_samples * 0.8)
-    
-    # train_indices = indices[:split_idx]
-    # test_indices = indices[split_idx:]
-    
-    # x_train, y_train = x[:, train_indices], y[:, train_indices]
-    # x_test, y_test = x[:, test_indices], y[:, test_indices]
-    
-    # MODEL_PATH = "chess_model2.nn"
-    
-    # if os.path.exists(MODEL_PATH):
-    #     logger.info(f"Loading existing model from {MODEL_PATH}")
-    #     model = NeuralNetwork.load(MODEL_PATH)
-    # else:
-    #     logger.info("Creating new model")
-        
-    #     # Input size: 64*12 + 1 = 769
-    #     # Output size: 5
-        
-    #     model = NeuralNetwork(
-    #         layers=(
-    #             (Dense(769), ReLU()),
-    #             (Dense(128), ReLU()),
-    #             (Dense(64), ReLU()),
-    #             (Dense(5), Softmax()),
-    #         ),
-    #         loss=CategoricalCrossEntropy(),
-    #         optimizer=Adam(learning_rate=0.001),
-    #         regularization_factor=0.001,
-    #     )
-    
-    # logger.info("Training model")
-
-    # # Training hyperparams
-    # TOTAL_EPOCHS = 200
-    # BATCH_SIZE = 64
-
-    # # Prepare callbacks: checkpoint + early stopping
-    # checkpoint = ModelCheckpoint(MODEL_PATH, save_best_only=True)
-    # early = EarlyStopping(patience=15)
-    # csvlogger = CSVLogger(MODEL_PATH + '.log', overwrite=False) if not os.path.exists(MODEL_PATH + '.log') else None
-    # callbacks = [checkpoint, early]
-    # if csvlogger:
-    #     callbacks.append(csvlogger)
-
-    # # resume support: read meta file if exists
-    # import json
-    # meta_path = MODEL_PATH + '.meta'
-    # last_epoch = 0
-    # if os.path.exists(meta_path):
-    #     try:
-    #         with open(meta_path, 'r') as mf:
-    #             meta = json.load(mf)
-    #             last_epoch = int(meta.get('last_epoch', 0))
-    #             logger.info(f"Resuming from epoch {last_epoch}")
-    #     except Exception:
-    #         last_epoch = 0
-
-    # epochs_to_run = max(0, TOTAL_EPOCHS - last_epoch)
-
-    # if epochs_to_run > 0:
-    #     train_model(
-    #         model,
-    #         x_train,
-    #         y_train,
-    #         x_test,
-    #         y_test,
-    #         epochs=epochs_to_run,
-    #         batch_size=BATCH_SIZE,
-    #         callbacks=callbacks,
-    #         initial_epoch=last_epoch,
-    #     )
-    
-    # logger.info(f"Saving model to {MODEL_PATH}")
-    # model.save(MODEL_PATH)
-    
-    # logger.info("Evaluating model")
-    # loss = model.evaluate(x_test, y_test)
-    # logger.info(f"Validation loss: {np.squeeze(loss):.4f}")
-    
-    # preds = model.predict(x_test)
-    
-    # # Accuracy
-    # # preds is (5, num_samples)
-    # pred_classes = np.argmax(preds, axis=0)
-    # true_classes = np.argmax(y_test, axis=0)
-    # acc = np.mean(pred_classes == true_classes)
-    # logger.info(f"Test accuracy: {acc:.4f}")
-    
-    # # Test with provided FENs
-    # test_fens = [
-    #     "rnb1kbnr/pppp1ppp/8/4p3/6Pq/5P2/PPPPP2P/RNBQKBNR w KQkq - 1 3",
-    #     "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-    #     "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1",
-    #     "rnbqkbnr/pppp2pp/8/4pp1Q/3P4/4P3/PPP2PPP/RNB1KBNR b KQkq - 1 3",
-    #     "8/8/8/8/8/8/8/k1K5 w - - 0 1"
-    # ]
-    
-    # logger.info("Testing with provided FENs:")
-    # for fen in test_fens:
-    #     x_val = parse_fen(fen)
-    #     # Reshape for prediction (769, 1)
-    #     x_val = x_val.reshape(-1, 1)
-    #     pred = model.predict(x_val)
-    #     pred_class = np.argmax(pred, axis=0)[0]
-    #     label = INV_LABEL_MAP[pred_class]
-    #     logger.info(f"FEN: {fen}")
-    #     logger.info(f"Prediction: {label}")
-
 def run_predict(loadfile, chessfile):
     if os.path.exists(loadfile):
-        logger.info(f"Loading existing model from {loadfile}")
+        # logger.info(f"Loading existing model from {loadfile}")
         model = NeuralNetwork.load(loadfile)
     else:
         sys.exit(84)
@@ -302,21 +169,22 @@ def run_predict(loadfile, chessfile):
         pred = model.predict(x_val)
         pred_class = np.argmax(pred, axis=0)[0]
         label = INV_LABEL_MAP[pred_class]
-        logger.info(f"FEN: {fen}")
-        logger.info(f"Prediction: {label}")
+        # logger.info(f"FEN: {fen}")
+        # logger.info(f"Prediction: {label}")
+        print(label)
     pass
 
 def run_train(loadfile, chessfile, savefile=None, epochs=200, batch_size=64):
 
     # Check if dataset exists
     if not os.path.isdir(chessfile):
-        logger.error(f"Dataset directory {chessfile} not found.")
+        # logger.error(f"Dataset directory {chessfile} not found.")
         return
 
     # Load data
     x, y = load_data(chessfile)
     
-    logger.info(f"Loaded {len(x)} samples.")
+    # logger.info(f"Loaded {len(x)} samples.")
 
     x = x.T
     y = y.T
@@ -333,12 +201,12 @@ def run_train(loadfile, chessfile, savefile=None, epochs=200, batch_size=64):
     x_test, y_test = x[:, test_indices], y[:, test_indices]
     
     if os.path.exists(loadfile):
-        logger.info(f"Loading existing model from {loadfile}")
+        # logger.info(f"Loading existing model from {loadfile}")
         model = NeuralNetwork.load(loadfile)
     else:
         sys.exit(84)
     
-    logger.info("Training model")
+    # logger.info("Training model")
 
     # Prepare callbacks: checkpoint + early stopping
     checkpoint = ModelCheckpoint(loadfile, save_best_only=True)
@@ -356,7 +224,7 @@ def run_train(loadfile, chessfile, savefile=None, epochs=200, batch_size=64):
             with open(meta_path, 'r') as mf:
                 meta = json.load(mf)
                 last_epoch = int(meta.get('last_epoch', 0))
-                logger.info(f"Resuming from epoch {last_epoch}")
+                # logger.info(f"Resuming from epoch {last_epoch}")
         except Exception:
             last_epoch = 0
 
@@ -375,14 +243,14 @@ def run_train(loadfile, chessfile, savefile=None, epochs=200, batch_size=64):
             initial_epoch=last_epoch,
         )
     
-    logger.info(f"Saving model to {loadfile}")
+    # logger.info(f"Saving model to {loadfile}")
     if savefile is not None:
         model.save(savefile)
     else:
         model.save(loadfile)
 
     
-    
+    #### Allow to evaluate after training if needed
 
     # logger.info("Evaluating model")
     # loss = model.evaluate(x_test, y_test)

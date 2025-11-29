@@ -1,0 +1,8 @@
+dataset
+__pycache__
+*.txt
+*.log
+*.csv
+*.json
+*.meta
+venv/
