@@ -313,7 +313,7 @@ if __name__ == "__main__":
     # print(f'Loadfile: {loadfile}, Chessfile: {chessfile}, Mode: {mode}, Savefile: {savefile}')
 
     if mode == 'train':
-        run_train(loadfile, chessfile, savefile=savefile, epochs=1, batch_size=64)
+        run_train(loadfile, chessfile, savefile=savefile, epochs=200, batch_size=64)
     elif mode == 'predict':
         if savefile is not None:
             print('Warning: --save ignored in predict mode', file=sys.stderr)
